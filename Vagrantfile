@@ -75,7 +75,7 @@ Vagrant.configure(2) do |config|
          node.vm.box = "chef/centos-7.0"
          node.vm.hostname = slave_conf['name'] + n.to_s
          node.vm.network "private_network", ip: ip
-         node.vm.network "forwarded_port", guest: 22, host: slave_conf['ssh-port'] + n
+         node.vm.network "forwarded_port", guest: 22, host: slave_conf['ssh-port']
          node.vm.synced_folder "../share", "/share"
          node.vm.provision "file", source: "./guest-ssh-config", destination: "~/.ssh/config"
          node.vm.provision "file", source: "./etc-hosts", destination: "/tmp/etc-hosts"
@@ -84,3 +84,5 @@ Vagrant.configure(2) do |config|
    end   
 
 end
+
+#TODO: fix multi-port issue: port 2000 2001 enabled for slave1 and 2002 and 2003 slave2
