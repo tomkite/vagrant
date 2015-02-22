@@ -1,0 +1,10 @@
+Host <HOST>
+   HostName <HOSTNAME>
+   User vagrant
+   Port <PORT>
+   UserKnownHostsFile /dev/null
+   StrictHostKeyChecking no
+   PasswordAuthentication no
+   IdentityFile <KEYBASEPATH>/.vagrant/machines/<HOST>/virtualbox/private_key
+   IdentitiesOnly yes
+   LogLevel FATAL
