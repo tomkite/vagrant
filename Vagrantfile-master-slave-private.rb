@@ -56,7 +56,7 @@ Vagrant.configure(2) do |config|
    config.vm.define master, primary: true  do |master|
       puts "#{master} ip: " + master_conf['ip']
       master.vm.box = "chef/centos-7.0"
-      master.vm.hostname = master_conf['hostname']
+      master.vm.hostname = master_conf['name']
       master.vm.network "private_network", ip: master_conf['ip']
       master.vm.synced_folder "../share", "/share"
       master.vm.provision "file", source: "./guest-ssh-config", destination: "~/.ssh/config"

@@ -1,5 +1,8 @@
 #!/usr/bin/env ruby
 
+require 'json'
+require 'fileutils'
+
 master_conf_str = '{
    "name": "master",
    "ip": "172.16.1.100"
@@ -25,12 +28,22 @@ guest_ssh_config = File.read('ssh-config.template')
 host_ssh_config = guest_ssh_config.dup
 guest_subs.each {|sub| guest_ssh_config.gsub!(sub[0], sub[1])}
 host_subs.each {|sub| host_ssh_config.gsub!(sub[0], sub[1])}
-File.open("etc-hosts", 'a') {|f| f.write("#{ip} #{hostname}\n") }
-File.open("guest-ssh-config", 'a') {|f| f.write("#{guest_ssh_config}\n") }
-File.open("#{Dir.home}/.ssh/config", 'a') {|f| f.write("#{host_ssh_config}\n") }
+case ARGV[0]
+when "provision", "up"
+   idfile = ".vagrant/machines/#{hostname}/virtualbox/id"
+   if ! File.exist?(idfile)
+      File.open("etc-hosts", 'a') {|f| f.write("#{ip} #{hostname}\n") }
+      File.open("guest-ssh-config", 'a') {|f| f.write("#{guest_ssh_config}\n") }
+      File.open("#{Dir.home}/.ssh/config", 'a') {|f| f.write("#{host_ssh_config}\n") }
+      puts "master prepare ssh-config and guest hosts files"
+   else
+      puts "skip master ssh-config and guest hosts files when resume"
+   end
+else
+   puts "skip master ssh-config and guest hosts files"
+end
 
 #slaves
-require 'json'
 slave_conf = JSON.parse(slave_conf_str)
 Range.new(1, slave_conf['num']).each do |n|
    ip_octs = slave_conf['ip'].split('.')
@@ -45,9 +58,21 @@ Range.new(1, slave_conf['num']).each do |n|
    host_ssh_config = guest_ssh_config.dup
    guest_subs.each {|sub| guest_ssh_config.gsub!(sub[0], sub[1])}
    host_subs.each {|sub| host_ssh_config.gsub!(sub[0], sub[1])}
-   File.open("etc-hosts", 'a') {|f| f.write("#{ip} #{hostname}\n") }
-   File.open("guest-ssh-config", 'a') {|f| f.write("#{guest_ssh_config}\n") }
-   File.open("#{Dir.home}/.ssh/config", 'a') {|f| f.write("#{host_ssh_config}\n") }
+   case ARGV[0]
+   when "provision", "up"
+      idfile = ".vagrant/machines/#{hostname}/virtualbox/id"
+      if ! File.exist?(idfile)
+         File.open("etc-hosts", 'a') {|f| f.write("#{ip} #{hostname}\n") }
+         File.open("guest-ssh-config", 'a') {|f| f.write("#{guest_ssh_config}\n") }
+         File.open("#{Dir.home}/.ssh/config", 'a') {|f| f.write("#{host_ssh_config}\n") }
+         puts "master prepare ssh-config and guest hosts files"
+      else
+         puts "skip master ssh-config and guest hosts files when resume"
+      end
+   else
+      puts "skip master ssh-config and guest hosts files"
+   end
+
 end
 
 Vagrant.configure(2) do |config|
@@ -56,7 +81,7 @@ Vagrant.configure(2) do |config|
    config.vm.define master, primary: true  do |master|
       puts "#{master} ip: " + master_conf['ip']
       master.vm.box = "chef/centos-7.0"
-      master.vm.hostname = master_conf['hostname']
+      master.vm.hostname = master_conf['name']
       master.vm.network "private_network", ip: master_conf['ip']
       master.vm.synced_folder "../share", "/share"
       master.vm.provision "file", source: "./guest-ssh-config", destination: "~/.ssh/config"
@@ -75,7 +100,7 @@ Vagrant.configure(2) do |config|
          node.vm.box = "chef/centos-7.0"
          node.vm.hostname = slave_conf['name'] + n.to_s
          node.vm.network "private_network", ip: ip
-         node.vm.network "forwarded_port", guest: 22, host: slave_conf['ssh-port']
+         node.vm.network "forwarded_port", guest: 22, host: slave_conf['ssh-port'] + n
          node.vm.synced_folder "../share", "/share"
          node.vm.provision "file", source: "./guest-ssh-config", destination: "~/.ssh/config"
          node.vm.provision "file", source: "./etc-hosts", destination: "/tmp/etc-hosts"
@@ -83,6 +108,12 @@ Vagrant.configure(2) do |config|
       end
    end   
 
-end
+   case ARGV[0]
+   when "destroy"
+      File.delete("etc-hosts") if File.exist?("etc-hosts")
+      File.delete("guest-ssh-config") if File.exist?("guest-ssh-config")
+      File.delete("#{Dir.home}/.ssh/config") if File.exist?("#{Dir.home}/.ssh/config")
+      FileUtils.copy "#{Dir.home}/.ssh/config.orig", "#{Dir.home}/.ssh/config"
+   end
 
-#TODO: fix multi-port issue: port 2000 2001 enabled for slave1 and 2002 and 2003 slave2
+end
