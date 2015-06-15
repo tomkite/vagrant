@@ -5,6 +5,6 @@ Host <HOST>
    UserKnownHostsFile /dev/null
    StrictHostKeyChecking no
    PasswordAuthentication no
-   IdentityFile <KEYBASEPATH>/.vagrant/machines/<HOST>/virtualbox/private_key
+   IdentityFile <KEYBASEPATH>/.ssh/tom_rsa
    IdentitiesOnly yes
    LogLevel FATAL
