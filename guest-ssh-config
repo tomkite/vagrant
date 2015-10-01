@@ -1,33 +1,38 @@
+host github.com
+  HostName %h
+  user git
+  IdentityFile /vagrant/.ssh/git_rsa
+
 Host master
    HostName %h
    User vagrant
-   Port 22
+   #Port <PORT>
    UserKnownHostsFile /dev/null
    StrictHostKeyChecking no
    PasswordAuthentication no
-   IdentityFile /vagrant/.vagrant/machines/master/virtualbox/private_key
+   IdentityFile /vagrant/.ssh/tom_rsa
    IdentitiesOnly yes
    LogLevel FATAL
 
 Host slave1
    HostName %h
    User vagrant
-   Port 22
+   #Port <PORT>
    UserKnownHostsFile /dev/null
    StrictHostKeyChecking no
    PasswordAuthentication no
-   IdentityFile /vagrant/.vagrant/machines/slave1/virtualbox/private_key
+   IdentityFile /vagrant/.ssh/tom_rsa
    IdentitiesOnly yes
    LogLevel FATAL
 
 Host slave2
    HostName %h
    User vagrant
-   Port 22
+   #Port <PORT>
    UserKnownHostsFile /dev/null
    StrictHostKeyChecking no
    PasswordAuthentication no
-   IdentityFile /vagrant/.vagrant/machines/slave2/virtualbox/private_key
+   IdentityFile /vagrant/.ssh/tom_rsa
    IdentitiesOnly yes
    LogLevel FATAL
 

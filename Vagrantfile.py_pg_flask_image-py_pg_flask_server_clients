@@ -11,7 +11,7 @@ master_conf_str = '{
 slave_conf_str = '{
    "name": "slave",
    "ip": "10.10.10.10",
-   "num": 1
+   "num": 2
 }'
 
 homedir = "#{Dir.home}"
@@ -86,13 +86,13 @@ Vagrant.configure(2) do |master_config|
    master_config.vm.define mastername, primary: true  do |master|
       master.vm.provider :virtualbox do |vb|
          vb.customize ["modifyvm", :id, "--cpus", "2"]
-         vb.customize ["modifyvm", :id, "--memory", "2048"]
+         vb.customize ["modifyvm", :id, "--memory", "3072"]
       end
       puts "#{master} ip: " + master_conf['ip']
       master.vm.box = "py-pg-flask-server"
       master.vm.hostname = master_conf['name']
       master.vm.network "private_network", ip: master_conf['ip']
-      master.vm.synced_folder "../share", "/share"
+      master.vm.synced_folder "..", "/data"
       master.vm.provision "file", source: "./guest-ssh-config", destination: "~/.ssh/config"
       master.vm.provision "file", source: "./etc-hosts", destination: "/tmp/etc-hosts"
       master.vm.provision "shell", privileged: true, inline: "cat /tmp/etc-hosts >> /etc/hosts"
@@ -112,7 +112,7 @@ Vagrant.configure(2) do |slave_config|
       slave_config.vm.define nodename do |node|
          node.vm.provider :virtualbox do |vb|
             vb.customize ["modifyvm", :id, "--cpus", "1"]
-            vb.customize ["modifyvm", :id, "--memory", "1024"]
+            vb.customize ["modifyvm", :id, "--memory", "2048"]
          end
          octs = slave_conf['ip'].split('.')
          octs[3] = octs[3].to_i + n
@@ -121,7 +121,7 @@ Vagrant.configure(2) do |slave_config|
          node.vm.box = "py-pg-flask-client"
          node.vm.hostname = slave_conf['name'] + n.to_s
          node.vm.network "private_network", ip: ip
-         node.vm.synced_folder "../share", "/share"
+         node.vm.synced_folder "..", "/data"
          node.vm.provision "file", source: "./guest-ssh-config", destination: "~/.ssh/config"
          node.vm.provision "file", source: "./etc-hosts", destination: "/tmp/etc-hosts"
          node.vm.provision "shell", privileged: true, inline: "cat /tmp/etc-hosts >> /etc/hosts"
