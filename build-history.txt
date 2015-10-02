@@ -1,0 +1,66 @@
+* https://lists.centos.org/pipermail/centos-announce/2015-June/021162.html
+
+* VirtualBox:
+http://cloud.centos.org/centos/7/vagrant/x86_64/images/CentOS-7-Vagrant-1505-x86_64-01.box
+sha256: 572c5ce3fc4e1a1efe274f5c30bc1645240bf1702fcdcd1976e67988d04df001
+
+curl -LO http://cloud.centos.org/centos/7/vagrant/x86_64/images/CentOS-7-Vagrant-1505-x86_64-01.box
+
+(try)tahoe:vagrant tahoe$ shasum -a 256 CentOS-7-Vagrant-1505-x86_64-01.box 
+572c5ce3fc4e1a1efe274f5c30bc1645240bf1702fcdcd1976e67988d04df001  CentOS-7-Vagrant-1505-x86_64-01.box
+(try)tahoe:vagrant tahoe$ 572c5ce3fc4e1a1efe274f5c30bc1645240bf1702fcdcd1976e67988d04df001
+
+(try)tahoe:vagrant tahoe$ vagrant version
+Installed Version: 1.7.4
+Latest Version: 1.7.4
+ 
+You're running an up-to-date version of Vagrant!
+(try)tahoe:vagrant tahoe$ vagrant box list
+There are no installed boxes! Use `vagrant box add` to add some.
+
+(try)tahoe:vagrant tahoe$ vagrant box add centos/7
+==> box: Loading metadata for box 'centos/7'
+    box: URL: https://atlas.hashicorp.com/centos/7
+This box can work with multiple providers! The providers that it
+can work with are listed below. Please review the list and choose
+the provider you will be working with.
+
+1) libvirt
+2) virtualbox
+
+Enter your choice: 2
+==> box: Adding box 'centos/7' (v1508.01) for provider: virtualbox
+    box: Downloading: https://atlas.hashicorp.com/centos/boxes/7/versions/1508.01/providers/virtualbox.box
+==> box: Successfully added box 'centos/7' (v1508.01) for 'virtualbox'!
+(try)tahoe:vagrant tahoe$ 
+vagrant init centos/7; vagrant up --provider virtualbox
+
+(try)tahoe:vagrant tahoe$ vagrant up
+...
+yum update
+build guest addition
+clean up
+
+(try)tahoe:vagrant tahoe$ VBoxManage list runningvms
+"vagrant_barebone_1443765806693_16706" {82c20eda-65a9-443d-b020-d1593a4117b7}
+(try)tahoe:vagrant tahoe$ vagrant package --base vagrant_barebone_1443765806693_16706 
+==> vagrant_barebone_1443765806693_16706: Attempting graceful shutdown of VM...
+    vagrant_barebone_1443765806693_16706: Guest communication could not be established! This is usually because
+    vagrant_barebone_1443765806693_16706: SSH is not running, the authentication information was changed,
+    vagrant_barebone_1443765806693_16706: or some other networking issue. Vagrant will force halt, if
+    vagrant_barebone_1443765806693_16706: capable.
+==> vagrant_barebone_1443765806693_16706: Forcing shutdown of VM...
+==> vagrant_barebone_1443765806693_16706: Clearing any previously set forwarded ports...
+==> vagrant_barebone_1443765806693_16706: Exporting VM...
+==> vagrant_barebone_1443765806693_16706: Compressing package to: /Users/tahoe/data/geek/vagrant/package.box
+(try)tahoe:vagrant tahoe$ vagrant box list
+centos/7 (virtualbox, 1508.01)
+(try)tahoe:vagrant tahoe$ vagrant box add centos7-vm package.box 
+==> box: Box file was not detected as metadata. Adding it directly...
+==> box: Adding box 'centos7-vm' (v0) for provider: 
+    box: Unpacking necessary files from: file:///Users/tahoe/data/geek/vagrant/package.box
+==> box: Successfully added box 'centos7-vm' (v0) for 'virtualbox'!
+(try)tahoe:vagrant tahoe$ vagrant box list
+centos/7   (virtualbox, 1508.01)
+centos7-vm (virtualbox, 0)
+(try)tahoe:vagrant tahoe$ 

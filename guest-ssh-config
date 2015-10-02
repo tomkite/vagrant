@@ -1,7 +1,7 @@
 host github.com
   HostName %h
   user git
-  IdentityFile /vagrant/.ssh/git_rsa
+  IdentityFile /vagrant/.ssh/tomkite_rsa
 
 Host master
    HostName %h
@@ -10,7 +10,7 @@ Host master
    UserKnownHostsFile /dev/null
    StrictHostKeyChecking no
    PasswordAuthentication no
-   IdentityFile /vagrant/.ssh/tom_rsa
+   IdentityFile /vagrant/.ssh/tomkite_rsa
    IdentitiesOnly yes
    LogLevel FATAL
 
@@ -21,7 +21,7 @@ Host slave1
    UserKnownHostsFile /dev/null
    StrictHostKeyChecking no
    PasswordAuthentication no
-   IdentityFile /vagrant/.ssh/tom_rsa
+   IdentityFile /vagrant/.ssh/tomkite_rsa
    IdentitiesOnly yes
    LogLevel FATAL
 
@@ -32,7 +32,6 @@ Host slave2
    UserKnownHostsFile /dev/null
    StrictHostKeyChecking no
    PasswordAuthentication no
-   IdentityFile /vagrant/.ssh/tom_rsa
+   IdentityFile /vagrant/.ssh/tomkite_rsa
    IdentitiesOnly yes
    LogLevel FATAL
-

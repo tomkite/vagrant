@@ -1,0 +1,38 @@
+barebone_name = "barebone"
+barebone_ip = "192.168.10.10"
+
+yum_update = <<-eos
+   echo "SCRIPT BEGIN: yum_update"
+   yum update
+   yum install -y epel-release
+   yum makecache
+   echo "SCRIPT END: yum_update"
+eos
+
+build_guest_addition = <<-eos
+   echo "SCRIPT BEGIN: build_guest_addition"
+   curl -O http://download.virtualbox.org/virtualbox/4.3.30/VBoxGuestAdditions_4.3.30.iso
+   mkdir /media/VBoxGuestAdditions
+   mount -o loop,ro VBoxGuestAdditions_4.3.30.iso /media/VBoxGuestAdditions
+   yum install -y kernel-devel-3.10.0-229.11.1.el7.x86_64 bzip2 gcc
+   sh /media/VBoxGuestAdditions/VBoxLinuxAdditions.run
+   rm VBoxGuestAdditions_4.3.30.iso
+   umount /media/VBoxGuestAdditions
+   rmdir /media/VBoxGuestAdditions
+   yum remove -y kernel-devel-3.10.0-229.11.1.el7.x86_64 gcc
+   dd if=/dev/zero of=/empty bs=1M
+   rm -f /empty
+   echo "SCRIPT END: build_guest_addition"
+eos
+
+Vagrant.configure("2") do |config|
+  config.vm.define barebone_name do |node|
+    node.vm.hostname = barebone_name
+    node.vm.box = "centos7-min"
+    #node.vm.box = "centos/7"
+    node.vm.network "private_network", ip: barebone_ip
+    node.vm.provision "shell", privileged: true, inline: yum_update
+    node.vm.provision "shell", privileged: true, inline: build_guest_addition
+  end
+end
+
