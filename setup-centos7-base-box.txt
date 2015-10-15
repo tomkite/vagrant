@@ -1,0 +1,241 @@
+source: http://linoxide.com/linux-how-to/setup-centos-7-vagrant-base-box-virtualbox/
+
+Setup CentOS 7 Vagrant Base Box from Scratch Using VirtualBox
+
+July 21, 2015 | By Arun Pyasi in LINUX HOWTO
+
+In this article, we'll learn how to create a CentOS 7 Vagrant Base Box from Scratch using VirtualBox. Vagrant is an awesome tool developed by HashiCorp for creating and configuring lightweight, reproducible, and portable development environments built on top of industry-standard technology and controlled by a single consistent workflow to help maximize the productivity and flexibility. Its as a higher-level wrapper around virtualization software such as VirtualBox, VMware, KVM and Linux Containers (LXC), and around configuration management software such as Ansible, Chef, Salt and Puppet. Vagrant makes a lot easy to spin local virtual machines using VirtualBox. It utilizes the virtualization environment and deploys virtual machines of the choice and manages the user to have direct access and manage multiple virtual machine on top of it. Here are some easy steps on how we can quickly create a centos 7 vagrant base box from scratch with virtualbox.
+
+1. Installing VirtualBox
+
+First of all, we'll download the latest version ie 4.3.28 virtual box for the virtualization of vagrant. We'll download it from the VirtualBox Official Download Page using our web browser or we can use wget using terminal. Here, we're running Ubuntu 14.04 in our host machine so, we'll gonna download the debian package for Ubuntu.
+
+# wget http://download.virtualbox.org/virtualbox/4.3.28/virtualbox-4.3_4.3.28-100309~Ubuntu~raring_amd64.deb
+
+--2015-06-16 17:49:13-- http://download.virtualbox.org/virtualbox/4.3.28/virtualbox-4.3_4.3.28-100309~Ubuntu~raring_amd64.deb
+Resolving download.virtualbox.org (download.virtualbox.org)... 137.254.120.26
+Connecting to download.virtualbox.org (download.virtualbox.org)|137.254.120.26|:80... connected.
+...
+HTTP request sent, awaiting response... 200 OK
+Length: 65115674 (62M) [application/x-debian-package]
+Saving to: ‘virtualbox-4.3_4.3.28-100309~Ubuntu~raring_amd64.deb’
+100%[===============================>] 65,115,674 36.8MB/s in 1.7s
+2015-06-16 17:49:15 (36.8 MB/s) - ‘virtualbox-4.3_4.3.28-100309~Ubuntu~raring_amd64.deb’ saved
+
+After downloading the debian file, we'll gonna install it using dpkg package manager.
+
+# dpkg -i virtualbox-4.3_4.3.28-100309~Ubuntu~raring_amd64.deb
+
+Then, to fix the required dependencies, we'll gonna run the below command.
+
+# apt-get -f install
+
+2. Installing Vagrant
+
+As we're running Ubuntu 14.04 on our host machine, we'll now gonna download the latest version of vagrant ie 1.7.2 from our Official Vagrant Download Page using wget or using our favorite web browser.
+
+# wget https://dl.bintray.com/mitchellh/vagrant/vagrant_1.7.2_x86_64.deb
+
+After downloading, we'll now install it using dpkg package manager.
+
+# dpkg -i vagrant_1.7.2_x86_64.deb
+
+Selecting previously unselected package vagrant.
+(Reading database ... 117170 files and directories currently installed.)
+Preparing to unpack vagrant_1.7.2_x86_64.deb ...
+Unpacking vagrant (1:1.7.2) ...
+Setting up vagrant (1:1.7.2) ...
+
+3. Preparing Virtual Machine
+
+Downloading CentOS Image File
+
+As we are doing everything from scratch in this tutorial, we'll create our virtual machine by our own setup and configuration in the Virtual Box. So, before we begin the configure the VM, we'll need to download our very own centos 7 iso file. We can download it from http://mirror.centos.org/centos/7/isos/x86_64/ by selecting the mirror nearby our place and the required image file. Here, we'll download the minimal iso of CentOS 7. Now as our iso image file is ready to go, we'll now continue further for the creation of virtual machine in the virtual box.
+
+Creating Virtual Machine
+
+Now, we'll launch the virtual box that we just installed in our host operating system. Then, we'll click on New Button. Then we'll give the virtual machine a name as centos-7 then we'll choose Linux under Type.
+
+Creating Centos 7 Virtual Machine
+
+And choose Red Hat (64 bit) as version. Under Memory size, we'll leave RAM at 512 MB as vagrant has the ability to change it.
+
+Allocating Memory
+
+ 
+
+Now, we'll select Create a virtual hard drive now, and click Create. We'll leave default name under File location. Then set the hard disk file size to 40.00 GB and select VDI (VirtualBox Disk Image) as Hard drive file type.
+
+Creating Virtual Hard Disk
+
+Then we'll select Dynamically allocated and click Create. Hurray. we've successfully created the virtual machine in our Virtual Box.
+
+Further Configuring Virutal Machine
+
+Then for further configuration, we'll click the virtual machine name and click Settings. Then go to the Storage tab and click Empty just under Controller IDE, then on the right hand side of the window click the CD icon, and select choose a virtual CD/DVD disk file. Navigate to where the CentOS 7 iso image was downloaded, select it, and click Open. Then we'll wanna click Ok to close the Settings menu.
+
+Choosing Centos 7 Image
+
+4. Installing CentOS 7 in Virtual Machine
+
+Finally, we're upto installing our CentOS 7 in the virtual machine we just created. The installation process is pretty simple and is easy as installing as usually and most of the default options can be used. You can also follow http://linoxide.com/how-tos/centos-7-step-by-step-screenshots/ for the installation part of the OS.
+
+Now, after the operating system has been installed, we'll now configure the operating system to work with Vagrant.
+
+Now, we'll gonna open a console inside the virtual machine and login as root.
+
+As eth0 is disabled by default, we'll need to make it up.
+
+# ifup eth0
+
+Now, we'll install some additional packages like openssh, nano, ntp, curl from the repository using yum package manager.
+
+# yum install -y openssh-clients nano wget ntp curl
+
+Then, we'll enable the ntpd service to start on every boot.
+
+# chkconfig ntpd on
+
+After that, we'll wanna set the time from time.nist.gov server.
+
+# service ntpd stop
+
+# ntpdate time.nist.gov
+
+# service ntpd start
+
+Now, we'll gonna enable the ssh service to start on boot so that we can ssh in into the machine as soon as it boots.
+
+chkconfig sshd on
+
+We'll gonna disable the iptables and ip45.55.88.66tables services from starting on boot.
+
+# chkconfig iptables off
+
+# chkconfig ip6tables off
+
+Then we'll set SELinux to permissive.
+
+# sed -i -e 's/^SELINUX=.*/SELINUX=permissive/' /etc/selinux/config
+
+After that, we'll wanna add a new user named vagrant so that we can use it using vagrant.
+
+# useradd vagrant
+
+Now, we'll create vagrant user’s .ssh folder so that ssh keys and informations are stored there.
+
+# mkdir -m 0700 -p /home/vagrant/.ssh
+
+If we want to use our own SSH public/private key then we'll wanna create an SSH public/private key on our workstation, and copy the public key to /home/vagrant/.ssh/authorized_keys on the virtual machine.
+
+Otherwise, if we wanna to use the SSH public/private key provided by Vagrant, we can simply run the following command:
+
+# curl https://raw.githubusercontent.com/mitchellh/vagrant/master/keys/vagrant.pub >> /home/vagrant/.ssh/authorized_keys
+
+Now, we'll wanna change permissions on authorized_keys files to be more restrictive with chmod
+
+# chmod 600 /home/vagrant/.ssh/authorized_keys
+
+Then, we'll fix the ownership of the .ssh folder to vagrant user and group using chown.
+
+# chown -R vagrant:vagrant /home/vagrant/.ssh
+
+Now, here is the main important change we need to do, we'll need to comment out requiretty in /etc/sudoers. This change is important because it allows ssh to send remote commands using sudo. If this is not done, vagrant not be able to apply changes at startup. This can be done by running the following command.
+
+# sed -i 's/^\(Defaults.*requiretty\)/#\1/' /etc/sudoers
+
+We'll allow user vagrant to use sudo without entering a password by running the following command.
+
+# echo "vagrant ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+Then we'll open /etc/sysconfig/network-scripts/ifcfg-eth0 and make it look exactly like the following
+
+DEVICE=eth0
+TYPE=Ethernet
+ONBOOT=yes
+NM_CONTROLLED=no
+BOOTPROTO=dhcp
+
+Now, remove the udev persistent net rules file using rm command.
+
+# rm -f /etc/udev/rules.d/70-persistent-net.rules
+
+Now we'll wanna clean up yum using the following command.
+
+# yum clean all
+
+Now, we'll gonna delete the tmp directory and make it clean.
+
+# rm -rf /tmp/*
+
+Then clean up the last logged in users logs.
+
+# rm -f /var/log/wtmp /var/log/btmp
+
+We'll clean up history.
+
+# history -c
+
+After that, we'll shutdown the virtual machine.
+
+# shutdown -h now
+
+Once the virtual machine is shutdown, we'll click Settings for the virtual machine. Then go to the Storage tab then select Controller IDE and click the green square with red minus icon in the lower right hand corner of the Storage Tree section of the Storage tab. Then click OK to close the Settings menu. After that, we'll go for creating the Vagrant Box.
+
+5. Creating Vagrant Box
+
+Make sure the value of the base command line switch matches the name of the virtual machine in VirtualBox:
+
+# vagrant package --output centos-7.box --base centos-7
+
+6. Adding the Vagrant Box
+
+Add the newly created Vagrant Box to vagrant (this will copy the Vagrant Box to another location):
+
+# vagrant box add centos-7 centos-7.box
+
+In addition, the VirtualBox virtual machine can be deleted.
+
+7. Creating a Vagrant Project and Configure Vagrantfile
+
+Vagrant Projects can be created as many as we want. Each will contain different Vagrantfiles which contains the definition of the Vagrant Project and different virtual machines. To do so, we'll create a directory named vagrant under directory linoxide to store the Vagrantfile and associative virtual machines.
+
+# mkdir -p ~/linoxide/vagrant
+
+# cd ~/linoxide/vagrant
+
+Now, we'll create the Vagrantfile as follows.
+
+# vagrant init centos-7
+
+Now we have a Vagrantfile that points to the centos-7 base box we just created above. If we are using our own SSH private/public key, and not the SSH private/public key provided by Vagrant, we need to tell Vagrantfile where to find the SSH private key. To do so, we'll need to add the following inside the Vagrantfile we just created.
+
+# nano Vagrantfile
+
+config.ssh.private_key_path = "~/.ssh/id_rsa"
+
+If you don't want to share folders between your virtual machine and host operating system, simply disable it by adding the following to your Vagrantfile.
+
+config.vm.synced_folder ".", "/vagrant", id: "vagrant-root", disabled: true
+
+8. Starting Vagrant
+
+Now, as we have done all the above steps completely, we'll finally wanna run our first vagrant virtual machine out of the box. To run our vagrant virtual machine having centos 7 operating system, we'll just need to run the following command.
+
+# vagrant up
+
+If everything went awesome accordingly as expected, we should be able to see our running vagrant box while running vagrant status command.
+
+# vagrant status
+
+If we wanna ssh into the vagrant box and wanna control over the virtual machine, simply we'll run vagrant ssh
+
+# vagrant ssh
+
+After we are finished with our work and wanna delete or destroy our running vagrant virtual box, simply we can run vagrant destroy which will destroy that.
+
+# vagrant destroy
+
+Conclusion
+
+Finally, we have created our Vagrant box running CentOS 7 from Scratch using Virtual Box. This article makes us easy to create a Vagrant box if you already have a centos 7 image file or DVD or virtual machine and don't wanna download centos 7 box image for vagrant. This method also helps you create Vagrant box if you don't have internet connection available at that time but do have an image or DVD of the CentOS 7. The tutorial above is really a simple and easy to do guide for creating our centos 7 vagrant base box from scratch, we can even create vagrant box of any linux distribution with similar steps above. So, if you have any questions, comments, feedback please do write on the comment box below and let us know what stuffs needs to be added or improved. Thank You! Enjoy :-)

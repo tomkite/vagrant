@@ -14,6 +14,8 @@ slave_conf_str = '{
    "num": 2
 }'
 
+install_common_pkg='''yum install -y lsof nmap telnet tree'''
+
 homedir = "#{Dir.home}"
 
 #master
@@ -81,7 +83,7 @@ end
 #master
 Vagrant.configure(2) do |master_config|
    mastername = master_conf['name']
-   master_config.ssh.private_key_path = "~/.ssh/tom_rsa"
+   master_config.ssh.private_key_path = "~/.ssh/tomkite_rsa"
    master_config.ssh.forward_agent = true
    master_config.vm.define mastername, primary: true  do |master|
       master.vm.provider :virtualbox do |vb|
@@ -89,19 +91,21 @@ Vagrant.configure(2) do |master_config|
          vb.customize ["modifyvm", :id, "--memory", "3072"]
       end
       puts "#{master} ip: " + master_conf['ip']
-      master.vm.box = "py-pg-flask-server"
+      master.vm.box = "centos7-master"
       master.vm.hostname = master_conf['name']
       master.vm.network "private_network", ip: master_conf['ip']
       master.vm.synced_folder "..", "/data"
+      master.vm.synced_folder "salt_srv", "/srv"
       master.vm.provision "file", source: "./guest-ssh-config", destination: "~/.ssh/config"
       master.vm.provision "file", source: "./etc-hosts", destination: "/tmp/etc-hosts"
       master.vm.provision "shell", privileged: true, inline: "cat /tmp/etc-hosts >> /etc/hosts"
+      master.vm.provision "shell", privileged: true, inline: install_common_pkg
    end
 end
 
 Vagrant.configure(2) do |slave_config|
 #slaves
-   slave_config.ssh.private_key_path = "~/.ssh/tom_rsa"
+   slave_config.ssh.private_key_path = "~/.ssh/tomkite_rsa"
    slave_config.ssh.forward_agent = true
    #config.vm.provider "virtualbox" do |v|
       #v.memory = 1024
@@ -118,7 +122,7 @@ Vagrant.configure(2) do |slave_config|
          octs[3] = octs[3].to_i + n
          ip = octs.join('.')
          puts "#{node} ip: #{ip}"
-         node.vm.box = "py-pg-flask-client"
+         node.vm.box = "centos7-slave"
          node.vm.hostname = slave_conf['name'] + n.to_s
          node.vm.network "private_network", ip: ip
          node.vm.synced_folder "..", "/data"
@@ -128,6 +132,7 @@ Vagrant.configure(2) do |slave_config|
          node.vm.provision "shell", privileged: true, inline: "sed -i '/^#master: / s/.*/master: master/' /etc/salt/minion"
          inline_cmd = "sed -i 's/^#id:$/id: %s/' /etc/salt/minion" % nodename
          node.vm.provision "shell", privileged: true, inline: inline_cmd
+         node.vm.provision "shell", privileged: true, inline: install_common_pkg
       end
    end   
 end

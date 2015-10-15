@@ -1,0 +1,81 @@
+#!/usr/bin/env ruby
+
+slave_name = "slave-image"
+slave_ip = "192.168.10.11"
+
+slave_script_sudo = <<-eos
+   yum groupinstall -y development
+   yum install -y python-devel
+   yum install -y postgresql-devel
+   easy_install pip
+   pip install virtualenv
+eos
+
+slave_script = <<-eos
+   virtualenv try
+   source try/bin/activate
+   pip install ipython
+   pip install psycopg2
+   pip install flask-restful flask
+eos
+
+minion_script = <<-eos
+   yum install -y salt-minion
+   systemctl enable salt-minion
+   systemctl start salt-minion
+eos
+
+Vagrant.configure("2") do |config|
+  config.ssh.private_key_path = "~/.ssh/tomkite_rsa"
+  config.vm.define slave_name do |node|
+    node.vm.hostname = slave_name
+    node.vm.box = "centos7-minssh"
+    node.vm.network "private_network", ip: slave_ip
+    node.vm.provision "shell", inline: minion_script
+    node.vm.provision "shell", inline: slave_script_sudo
+    node.vm.provision "shell", privileged: false, inline: slave_script
+  end
+end
+
+
+master_name = "master-image"
+master_ip = "192.168.10.10"
+
+server_script_sudo = <<-eos
+   yum groupinstall -y development
+   yum install -y python-devel
+   yum install -y postgresql-server
+   yum install -y postgresql-devel
+   /bin/postgresql-setup initdb
+   systemctl enable postgresql
+   systemctl start postgresql
+   easy_install pip
+   pip install virtualenv
+eos
+
+server_script = <<-eos
+   virtualenv try
+   source try/bin/activate
+   pip install ipython
+   pip install psycopg2
+   pip install flask-restful flask
+eos
+
+master_script = <<-eos
+   yum install -y salt-master
+   systemclt enable salt-master
+   systemctl start salt-master
+eos
+
+Vagrant.configure("2") do |config|
+  config.ssh.private_key_path = "~/.ssh/tomkite_rsa"
+  config.vm.define master_name do |node|
+    node.vm.hostname = master_name
+    node.vm.box = "centos7-minssh"
+    node.vm.network "private_network", ip: master_ip
+    node.vm.provision "shell", inline: master_script
+    node.vm.provision "shell", inline: server_script_sudo
+    node.vm.provision "shell", privileged: false, inline: server_script
+  end
+end
+

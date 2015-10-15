@@ -14,22 +14,23 @@ build_guest_addition = <<-eos
    curl -O http://download.virtualbox.org/virtualbox/4.3.30/VBoxGuestAdditions_4.3.30.iso
    mkdir /media/VBoxGuestAdditions
    mount -o loop,ro VBoxGuestAdditions_4.3.30.iso /media/VBoxGuestAdditions
-   yum install -y kernel-devel-3.10.0-229.11.1.el7.x86_64 bzip2 gcc
+   yum install -y kernel-devel-3.10.0-229.el7.x86_64 bzip2 gcc
    sh /media/VBoxGuestAdditions/VBoxLinuxAdditions.run
    rm VBoxGuestAdditions_4.3.30.iso
    umount /media/VBoxGuestAdditions
    rmdir /media/VBoxGuestAdditions
-   yum remove -y kernel-devel-3.10.0-229.11.1.el7.x86_64 gcc
+   yum remove -y kernel-devel-3.10.0-229.el7.x86_64 gcc
    dd if=/dev/zero of=/empty bs=1M
    rm -f /empty
+   rm -rf /tmp/* /var/log/*
    echo "SCRIPT END: build_guest_addition"
 eos
 
 Vagrant.configure("2") do |config|
+  config.ssh.forward_agent = true
   config.vm.define barebone_name do |node|
     node.vm.hostname = barebone_name
     node.vm.box = "centos7-min"
-    #node.vm.box = "centos/7"
     node.vm.network "private_network", ip: barebone_ip
     node.vm.provision "shell", privileged: true, inline: yum_update
     node.vm.provision "shell", privileged: true, inline: build_guest_addition

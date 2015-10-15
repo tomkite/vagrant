@@ -1,0 +1,11 @@
+1.  install virtual box
+2.  install vagrant
+3.  download centos 7 minimum iso
+    sha256sum: 7cf1ac8da13f54d6be41e3ccf228dc5bb35792f515642755ff4780d5714d4278  CentOS-7-x86_64-Minimal-1503-01.iso
+(try)tahoe:vagrant tahoe$ shasum -a 256 ~/Downloads/CentOS-7-x86_64-Minimal-1503-01.iso 
+7cf1ac8da13f54d6be41e3ccf228dc5bb35792f515642755ff4780d5714d4278  /Users/tahoe/Downloads/CentOS-7-x86_64-Minimal-1503-01.iso
+(try)tahoe:vagrant tahoe$ 
+
+4.  create a virtualbox vm
+5.  map iso file to ide controller
+6.  boot the vm
