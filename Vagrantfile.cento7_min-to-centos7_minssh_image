@@ -30,7 +30,7 @@ Vagrant.configure("2") do |config|
   config.ssh.forward_agent = true
   config.vm.define barebone_name do |node|
     node.vm.hostname = barebone_name
-    node.vm.box = "centos7-min"
+    node.vm.box = "centos/7"
     node.vm.network "private_network", ip: barebone_ip
     node.vm.provision "shell", privileged: true, inline: yum_update
     node.vm.provision "shell", privileged: true, inline: build_guest_addition

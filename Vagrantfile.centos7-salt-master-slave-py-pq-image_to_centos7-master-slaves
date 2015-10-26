@@ -1,0 +1,144 @@
+#!/usr/bin/env ruby
+# description:
+#   source: centos7-salt-master-slave-py-pq-image
+#   addition: lsof nmap telnet tree bind-utils
+#   target: centos7-master-slaves
+
+require 'json'
+require 'fileutils'
+
+master_conf_str = '{
+   "name": "master",
+   "ip": "10.10.10.10"
+}'
+
+slave_conf_str = '{
+   "name": "slave",
+   "ip": "10.10.10.10",
+   "num": 2
+}'
+
+install_common_pkg='''yum install -y lsof nmap telnet tree bind-utils'''
+
+homedir = "#{Dir.home}"
+
+#master
+master_conf = JSON.parse(master_conf_str)
+hostname = master_conf['name']
+ip = master_conf['ip']
+puts "master ip=#{ip}"
+guest_subs = [ ['<HOST>', hostname], ['<HOSTNAME>', '%h'], ['<KEYBASEPATH>', '/vagrant'] ]
+host_subs = [ ['<HOST>', hostname], ['<HOSTNAME>', ip], ['<KEYBASEPATH>', Dir.pwd] ]
+guest_ssh_config = File.read('ssh-config.template')
+host_ssh_config = guest_ssh_config.dup
+guest_subs.each {|sub| guest_ssh_config.gsub!(sub[0], sub[1])}
+host_subs.each {|sub| host_ssh_config.gsub!(sub[0], sub[1])}
+case ARGV[0]
+when "provision", "up"
+   idfile = ".vagrant/machines/#{hostname}/virtualbox/id"
+   if ! File.exist?(idfile)
+      File.open("etc-hosts", 'a') {|f| f.write("#{ip} #{hostname}\n") }
+      File.open("guest-ssh-config", 'a') {|f| f.write("#{guest_ssh_config}\n") }
+      File.open("#{Dir.home}/.ssh/config", 'a') {|f| f.write("#{host_ssh_config}\n") }
+      puts "master prepare ssh-config and guest hosts files"
+   else
+      puts "skip master ssh-config and guest hosts files when resume"
+   end
+when "destroy"
+   puts "cleanup master ssh-config and guest hosts files"
+   File.delete("etc-hosts") if File.exist?("etc-hosts")
+   File.delete("guest-ssh-config") if File.exist?("guest-ssh-config")
+   File.delete("#{Dir.home}/.ssh/config") if File.exist?("#{Dir.home}/.ssh/config")
+   FileUtils.copy "#{Dir.home}/.ssh/config.orig", "#{Dir.home}/.ssh/config"
+else
+   puts "skip master ssh-config and guest hosts files"
+end
+
+#slaves
+slave_conf = JSON.parse(slave_conf_str)
+Range.new(1, slave_conf['num']).each do |n|
+   ip_octs = slave_conf['ip'].split('.')
+   ip_octs[3] = ip_octs[3].to_i + n
+   hostname = slave_conf['name']+n.to_s
+   ip = ip_octs.join('.')
+   puts "#{hostname} ip=#{ip}"
+   guest_subs = [ ['<HOST>', hostname], ['<HOSTNAME>', '%h'], ['<KEYBASEPATH>', '/vagrant'] ]
+   host_subs = [ ['<HOST>', hostname], ['<HOSTNAME>', ip], ['<KEYBASEPATH>', Dir.pwd] ]
+   guest_ssh_config = File.read('ssh-config.template')
+   host_ssh_config = guest_ssh_config.dup
+   guest_subs.each {|sub| guest_ssh_config.gsub!(sub[0], sub[1])}
+   host_subs.each {|sub| host_ssh_config.gsub!(sub[0], sub[1])}
+   case ARGV[0]
+   when "provision", "up"
+      idfile = ".vagrant/machines/#{hostname}/virtualbox/id"
+      if ! File.exist?(idfile)
+         File.open("etc-hosts", 'a') {|f| f.write("#{ip} #{hostname}\n") }
+         File.open("guest-ssh-config", 'a') {|f| f.write("#{guest_ssh_config}\n") }
+         File.open("#{Dir.home}/.ssh/config", 'a') {|f| f.write("#{host_ssh_config}\n") }
+         puts "master prepare ssh-config and guest hosts files"
+      else
+         puts "skip master ssh-config and guest hosts files when resume"
+      end
+   else
+      puts "skip master ssh-config and guest hosts files"
+   end
+end
+
+#master
+Vagrant.configure(2) do |master_config|
+   mastername = master_conf['name']
+   master_config.ssh.private_key_path = "~/.ssh/tom_rsa"
+   master_config.ssh.forward_agent = true
+   master_config.vm.define mastername, primary: true  do |master|
+      master.vm.provider :virtualbox do |vb|
+         vb.customize ["modifyvm", :id, "--cpus", "2"]
+         vb.customize ["modifyvm", :id, "--memory", "3072"]
+      end
+      puts "#{master} ip: " + master_conf['ip']
+      master.vm.box = "centos7-master"
+      master.vm.hostname = master_conf['name']
+      master.vm.network "private_network", ip: master_conf['ip']
+      master.vm.synced_folder "..", "/data"
+      master.vm.synced_folder "srv", "/srv"
+      inline_cmd = "sed -i 's/^#id:$/id: %s/' /etc/salt/minion" % mastername
+      master.vm.provision "shell", privileged: true, inline: inline_cmd
+      master.vm.provision "file", source: "./guest-ssh-config", destination: "~/.ssh/config"
+      master.vm.provision "file", source: "./etc-hosts", destination: "/tmp/etc-hosts"
+      master.vm.provision "shell", privileged: true, inline: "cat /tmp/etc-hosts >> /etc/hosts"
+      master.vm.provision "shell", privileged: true, inline: install_common_pkg
+   end
+end
+
+Vagrant.configure(2) do |slave_config|
+#slaves
+   slave_config.ssh.private_key_path = "~/.ssh/tom_rsa"
+   slave_config.ssh.forward_agent = true
+   #config.vm.provider "virtualbox" do |v|
+      #v.memory = 1024
+      #v.cpus = 1
+   #end
+   Range.new(1, slave_conf['num']).each do |n|
+      nodename = slave_conf['name'] + n.to_s
+      slave_config.vm.define nodename do |node|
+         node.vm.provider :virtualbox do |vb|
+            vb.customize ["modifyvm", :id, "--cpus", "1"]
+            vb.customize ["modifyvm", :id, "--memory", "2048"]
+         end
+         octs = slave_conf['ip'].split('.')
+         octs[3] = octs[3].to_i + n
+         ip = octs.join('.')
+         puts "#{node} ip: #{ip}"
+         node.vm.box = "centos7-slave"
+         node.vm.hostname = slave_conf['name'] + n.to_s
+         node.vm.network "private_network", ip: ip
+         node.vm.synced_folder "..", "/data"
+         node.vm.provision "file", source: "./guest-ssh-config", destination: "~/.ssh/config"
+         node.vm.provision "file", source: "./etc-hosts", destination: "/tmp/etc-hosts"
+         node.vm.provision "shell", privileged: true, inline: "cat /tmp/etc-hosts >> /etc/hosts"
+         node.vm.provision "shell", privileged: true, inline: "sed -i '/^#master: salt/ s/.*/master: master/' /etc/salt/minion"
+         inline_cmd = "sed -i 's/^#id:$/id: %s/' /etc/salt/minion" % nodename
+         node.vm.provision "shell", privileged: true, inline: inline_cmd
+         node.vm.provision "shell", privileged: true, inline: install_common_pkg
+      end
+   end   
+end
